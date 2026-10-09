@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>English Question Quiz — Present Simple</title>
+<title>English Question Quiz — Present Simple + Ordinals & Dates</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
   body {
@@ -17,13 +17,14 @@
   }
   h1 { font-size: 24px; color: #333; margin-bottom: 4px; }
   .subtitle { color: #888; font-size: 14px; margin-bottom: 20px; }
-  .badges { display: flex; gap: 8px; margin-bottom: 20px; }
+  .badges { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
   .badge {
-    flex: 1; text-align: center; padding: 6px; border-radius: 8px;
-    font-size: 12px; font-weight: 600; color: #fff; opacity: .35; transition: .3s;
+    flex: 1; min-width: 100px; text-align: center; padding: 6px; border-radius: 8px;
+    font-size: 11px; font-weight: 600; color: #fff; opacity: .35; transition: .3s;
   }
   .badge.active { opacity: 1; transform: scale(1.05); }
   .b1 { background: #4caf50; } .b2 { background: #2196f3; } .b3 { background: #ff9800; }
+  .b4 { background: #9c27b0; } .b5 { background: #e91e63; }
   .progress { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
   .progress > div { height: 100%; background: linear-gradient(90deg,#667eea,#764ba2); width: 0; transition: .4s; }
   .info-row { display: flex; justify-content: space-between; font-size: 14px; color: #666; margin-bottom: 16px; }
@@ -33,8 +34,7 @@
     padding: 14px; margin-bottom: 8px; font-size: 17px; color: #333;
   }
   .prompt .given { color: #555; font-style: italic; }
-  .prompt .phrasal { color: #764ba2; font-weight: 700; }
-  .prompt .target { background: #ffe9a8; padding: 0 4px; border-radius: 3px; }
+  .prompt .num { color: #9c27b0; font-weight: 700; font-size: 19px; }
   .hint { font-size: 13px; color: #999; margin-bottom: 16px; }
   .options { display: flex; flex-direction: column; gap: 10px; }
   .option {
@@ -69,6 +69,12 @@
   .start-btn:hover { opacity: .9; }
   .quiz-area { display: none; }
   .quiz-area.show { display: block; }
+  /* Календарь для раунда Dates */
+  .cal { display: flex; gap: 14px; justify-content: center; margin-bottom: 14px; }
+  .cal table { border-collapse: collapse; font-size: 13px; background: #fff; }
+  .cal caption { font-weight: 700; color: #333; margin-bottom: 4px; letter-spacing: 1px; }
+  .cal th { background: #efe9fa; color: #555; border: 1px solid #ddd; padding: 4px 7px; }
+  .cal td { border: 1px solid #e5e0f0; padding: 4px 7px; text-align: center; color: #333; }
 </style>
 </head>
 <body>
@@ -77,16 +83,18 @@
   <!-- Экран старта -->
   <div id="startScreen">
     <h1>🎯 English Question Quiz</h1>
-    <p class="subtitle">Present Simple: general, special & subject questions</p>
+    <p class="subtitle">Present Simple questions + Ordinal numbers + Dates</p>
     <div class="badges">
-      <div class="badge b1">General (Yes/No)</div>
-      <div class="badge b2">Special (Wh-)</div>
+      <div class="badge b1">General</div>
+      <div class="badge b2">Special</div>
       <div class="badge b3">Subject</div>
+      <div class="badge b4">Ordinals</div>
+      <div class="badge b5">Dates</div>
     </div>
     <p style="color:#666;font-size:15px;line-height:1.6;margin-bottom:24px;">
-      15 вопросов, 3 раунда. Практика вопросов в Present Simple с глаголом to be
-      (<i>be keen on, be passionate about, be late for, be on time</i>) и устойчивых
-      выражений (<i>get dressed, prepare breakfast, drive to work...</i>).
+      33 вопроса, 5 раундов. Построение вопросов в Present Simple (to be и do/does),
+      правописание порядковых числительных (first — thirty-first)
+      и произношение дат по календарю (<i>the tenth of April, twenty twenty-two...</i>).
     </p>
     <div style="text-align:center;"><button class="start-btn" onclick="startQuiz()">Начать игру ▶</button></div>
   </div>
@@ -95,15 +103,18 @@
   <div id="quizArea" class="quiz-area">
     <h1>🎯 English Question Quiz</h1>
     <div class="badges">
-      <div class="badge b1" id="bdg1">General (Yes/No)</div>
-      <div class="badge b2" id="bdg2">Special (Wh-)</div>
+      <div class="badge b1" id="bdg1">General</div>
+      <div class="badge b2" id="bdg2">Special</div>
       <div class="badge b3" id="bdg3">Subject</div>
+      <div class="badge b4" id="bdg4">Ordinals</div>
+      <div class="badge b5" id="bdg5">Dates</div>
     </div>
     <div class="progress"><div id="bar"></div></div>
     <div class="info-row">
-      <span>Вопрос <b id="qNum">1</b> из <span id="qTotal">15</span></span>
+      <span>Вопрос <b id="qNum">1</b> из <span id="qTotal">33</span></span>
       <span>Очки: <span class="score" id="score">0</span></span>
     </div>
+    <div id="calendarBox"></div>
     <div class="prompt" id="prompt"></div>
     <div class="hint" id="hint"></div>
     <div class="options" id="options"></div>
@@ -122,6 +133,27 @@
 </div>
 
 <script>
+// Мини-календарь (как в учебнике): March и April
+const calendarHTML = `
+<div class="cal">
+  <table><caption>MARCH</caption>
+    <tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+    <tr><td></td><td></td><td></td><td></td><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td></tr>
+    <tr><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td></tr>
+    <tr><td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td><td>24</td></tr>
+    <tr><td>25</td><td>26</td><td>27</td><td>28</td><td>29</td><td>30</td><td>31</td></tr>
+  </table>
+  <table><caption>APRIL</caption>
+    <tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+    <tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr>
+    <tr><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td></tr>
+    <tr><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td></tr>
+    <tr><td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td></tr>
+    <tr><td>29</td><td>30</td><td>31</td><td></td><td></td><td></td><td></td></tr>
+  </table>
+</div>`;
+
 const questions = [
   // ===== РАУНД 1: GENERAL (YES/NO) =====
   { round: 1,
@@ -185,7 +217,7 @@ const questions = [
   { round: 2,
     prompt: '<span class="given">My brother is keen on swimming.</span> — Задайте вопрос к выделенному: <b>swimming</b>',
     hint: 'What ... + to be → инверсия',
-    options: ['What is your brother keen on?', 'What does your brother keen on?', 'What your brother is keen on?', 'What is your brother keen on?'],
+    options: ['What is your brother keen on?', 'What does your brother keen on?', 'What your brother is keen on?', 'What is your brother keen in?'],
     correct: 0,
     explain: 'Устойчивое сочетание keen <b>on</b> сохраняет предлог: <b>What is your brother keen on?</b>'
   },
@@ -194,7 +226,7 @@ const questions = [
     hint: 'How + do/does + подлежащее + инфинитив',
     options: ['How you get to work?', 'How does you get to work?', 'How do you get to work?', 'How are you get to work?'],
     correct: 2,
-    explain: 'I/you → <b>do</b>: <b>How do you get to work?</b> Обратите внимание: выделено "by car", поэтому правильный вопрос — "How..." (каким образом), а не "What...".'
+    explain: 'I/you → <b>do</b>: <b>How do you get to work?</b> Выделено "by car" — вопрос о способе, поэтому How.'
   },
 
   // ===== РАУНД 3: SUBJECT =====
@@ -231,7 +263,139 @@ const questions = [
     hint: 'Кто ставит будильник на 6?',
     options: ['Who does set their alarm for 6 a.m.?', 'Who set their alarm for 6 a.m.?', 'Who sets their alarm for 6 a.m.?', 'Whom sets their alarm for 6 a.m.?'],
     correct: 2,
-    explain: 'Who = 3-е лицо ед.ч. → глагол с -s без вспомогательного: <b>Who sets their alarm for 6 a.m.?</b> Возможен вариант и "Who sets his alarm..." — но "their" нейтрально, когда мы не знаем, кто именно.'
+    explain: 'Who = 3-е лицо ед.ч. → глагол с -s без вспомогательного: <b>Who sets their alarm for 6 a.m.?</b>'
+  },
+
+  // ===== РАУНД 4: ORDINAL NUMBERS =====
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">3rd</span>',
+    hint: 'Третий — исключение',
+    options: ['third', 'thirth', 'three-th', 'thrid'],
+    correct: 0,
+    explain: '<b>third</b> — неправильное написание (как first, second). НЕ three + th!'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">5th</span>',
+    hint: 'five → ...?',
+    options: ['fiveth', 'fifth', 'fivth', 'five-th'],
+    correct: 1,
+    explain: 'five → <b>fifth</b>: ve меняется на f + th. Аналогично twelve → twelfth.'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">8th</span>',
+    hint: 'eight + th — просто добавляем окончание?',
+    options: ['eightth', 'eigth', 'eighth', 'aighth'],
+    correct: 2,
+    explain: 'eight + th = <b>eighth</b> (без лишней t, но с h от обоих слов: eigh-t-h).'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">9th</span>',
+    hint: 'nine → ...? (обратите внимание на букву e)',
+    options: ['nineth', 'ninth', 'ninthe', 'nainth'],
+    correct: 1,
+    explain: 'nine → <b>ninth</b>: буква e перед th отбрасывается.'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">12th</span>',
+    hint: 'twelve → ...?',
+    options: ['twelvth', 'twelfth', 'twelft', 'twelve-th'],
+    correct: 1,
+    explain: 'twelve → <b>twelfth</b>: ve меняется на f + th (как five → fifth).'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">13th</span>',
+    hint: 'thirteen + th',
+    options: ['thirtheenth', 'thirteen-th', 'thirthteen', 'thirteenth'],
+    correct: 3,
+    explain: 'thirteen + th = <b>thirteenth</b>: просто добавляем th, без изменений.'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">21st</span>',
+    hint: 'Составное числительное — не забудьте дефис',
+    options: ['twenty first', 'twenty-oneth', 'twenty-first', 'twentifirst'],
+    correct: 2,
+    explain: '<b>twenty-first</b>: составные порядковые (21st–99th) пишутся через дефис, и только последнее слово получает окончание (-st, -nd, -rd, -th).'
+  },
+  { round: 4,
+    prompt: 'Выберите правильное написание: <span class="num">30th</span>',
+    hint: 'thirty → ...? (гласные i/e)',
+    options: ['thirtyth', 'thirthieth', 'thirtieth', 'thiertieth'],
+    correct: 2,
+    explain: 'thirty → <b>thirtieth</b>: y меняется на ie + th (как twenty → twentieth).'
+  },
+
+  // ===== РАУНД 5: DATES =====
+  // --- Упражнение 6: календарь ---
+  { round: 5, calendar: true,
+    prompt: 'What\'s <b>the second Tuesday in April?</b>',
+    hint: 'Вторники в апреле: 3, 10, 17, 24. Второй — 10-е. Как сказать дату?',
+    options: ['the tenth of April', 'the twelfth of April', 'the second of April', 'the tenth in April'],
+    correct: 0,
+    explain: 'Дата произносится: <b>the + порядковое + of + месяц</b> → the tenth of April (или April the tenth). Предлог in не используется в этом шаблоне.'
+  },
+  { round: 5, calendar: true,
+    prompt: 'What\'s <b>the first Sunday in March?</b>',
+    hint: 'Воскресенья в марте: 4, 11, 18, 25.',
+    options: ['the first of March', 'the fourth of March', 'the eleventh of March', 'the third of March'],
+    correct: 1,
+    explain: 'Первое воскресенье — 4-е марта: <b>the fourth of March</b>. Fourth — четвёртый.'
+  },
+  { round: 5, calendar: true,
+    prompt: 'What\'s <b>the third Tuesday in March?</b>',
+    hint: 'Вторники в марте: 6, 13, 20, 27.',
+    options: ['twentieth of March', 'the twenty of March', 'the thirteenth of March', 'the twentieth of March'],
+    correct: 3,
+    explain: 'Третий вторник — 20-е: <b>the twentieth of March</b>. Не забудьте артикль the в начале!'
+  },
+  { round: 5, calendar: true,
+    prompt: 'What\'s <b>the fifth Saturday in March?</b>',
+    hint: 'Субботы в марте: 3, 10, 17, 24, 31.',
+    options: ['the thirty-one of March', 'the thirty-first of March', 'the thirty-oneth of March', 'the fifth of March'],
+    correct: 1,
+    explain: 'Пятая суббота — 31-е: <b>the thirty-first of March</b>. Thirty-first через дефис, с окончанием -st.'
+  },
+  { round: 5, calendar: true,
+    prompt: 'What\'s <b>the fourth Monday in April?</b>',
+    hint: 'Понедельники в апреле: 2, 9, 16, 23, 30.',
+    options: ['the twenty-third of April', 'the twenty-three of April', 'the twentieth-third of April', 'the thirtieth of April'],
+    correct: 0,
+    explain: 'Четвёртый понедельник — 23-е: <b>the twenty-third of April</b> (дефис + -rd у последнего слова).'
+  },
+  // --- Упражнение 7: произношение дат ---
+  { round: 5,
+    prompt: 'Напишите дату, как мы её произносим: <span class="num">3.2</span>',
+    hint: 'день.месяц → the + порядковое + of + месяц',
+    options: ['the three of February', 'the third of February', 'the third in February', 'three of February'],
+    correct: 1,
+    explain: '<b>the third of February</b> — день читаем порядковым числительным, месяц — именем существительным, предлог of.'
+  },
+  { round: 5,
+    prompt: 'Напишите дату, как мы её произносим: <span class="num">12.8</span>',
+    hint: 'twelve → ve меняется на f + th',
+    options: ['the twelve of August', 'the twelvth of August', 'the twelfth of August', 'the twelfth in August'],
+    correct: 2,
+    explain: '12-е — <b>the twelfth of August</b>: twelve → twelfth (ve → f + th).'
+  },
+  { round: 5,
+    prompt: 'Напишите дату, как мы её произносим: <span class="num">21.5</span>',
+    hint: 'дефис + окончание у последнего слова',
+    options: ['the twenty-one of May', 'the twenty-first of May', 'the twenty-oneth of May', 'the twenty first of May'],
+    correct: 1,
+    explain: '21-е — <b>the twenty-first of May</b>: дефис обязателен (twenty-first).'
+  },
+  { round: 5,
+    prompt: 'Напишите дату, как мы её произносим: <span class="num">30.11</span>',
+    hint: 'thirty → ie + th',
+    options: ['the thirtyth of November', 'the thirty of November', 'the thirtieth of November', 'the thirtieth in November'],
+    correct: 2,
+    explain: '30-е — <b>the thirtieth of November</b>: thirty → thirtieth (y → ie + th).'
+  },
+  { round: 5,
+    prompt: 'Напишите год, как мы его произносим: <span class="num">2022</span>',
+    hint: 'Годы читаются как два двузначных числа',
+    options: ['two thousand and twenty-two-second', 'twenty-two', 'twenty and twenty-two', 'twenty twenty-two'],
+    correct: 3,
+    explain: 'Годы делим пополам: 20 | 22 → <b>twenty twenty-two</b>. Аналогично: 2015 → twenty fifteen.'
   }
 ];
 
@@ -251,12 +415,13 @@ function showQuestion() {
   const q = questions[current];
   locked = false;
 
-  for (let r = 1; r <= 3; r++) {
+  for (let r = 1; r <= 5; r++) {
     document.getElementById('bdg' + r).classList.toggle('active', q.round === r);
   }
 
   document.getElementById('qNum').textContent = current + 1;
   document.getElementById('bar').style.width = (current / questions.length * 100) + '%';
+  document.getElementById('calendarBox').innerHTML = q.calendar ? calendarHTML : '';
   document.getElementById('prompt').innerHTML = q.prompt;
   document.getElementById('hint').textContent = '💡 ' + q.hint;
 
@@ -315,10 +480,10 @@ function showResult() {
   const total = questions.length;
   const pct = score / total;
   let emoji, msg;
-  if (pct === 1)      { emoji = '🏆'; msg = 'Идеально! Вы мастер вопросов в Present Simple!'; }
-  else if (pct >= .8) { emoji = '🌟'; msg = 'Отличный результат! Совсем чуть-чуть до идеала.'; }
-  else if (pct >= .6) { emoji = '👍'; msg = 'Хорошо! Повторите правила to be и do/does.'; }
-  else if (pct >= .4) { emoji = '💪'; msg = 'Неплохое начало! Обратите особое внимание на subject-вопросы.'; }
+  if (pct === 1)      { emoji = '🏆'; msg = 'Идеально! Вопросы, числительные и даты — всё отлично!'; }
+  else if (pct >= .8) { emoji = '🌟'; msg = 'Отличный результат! Ещё немного — и будет идеально.'; }
+  else if (pct >= .6) { emoji = '👍'; msg = 'Хорошо! Повторите правила to be, do/does и написание -th.'; }
+  else if (pct >= .4) { emoji = '💪'; msg = 'Неплохое начало! Обратите внимание на subject-вопросы и исключения в числительных.'; }
   else                { emoji = '📚'; msg = 'Стоит потренироваться ещё. Начните с правил do/does и to be!'; }
 
   document.getElementById('emoji').textContent = emoji;
