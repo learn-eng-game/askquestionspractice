@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Question Quiz — Present Simple</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; justify-content: center; align-items: center; padding: 20px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    max-width: 640px; width: 100%; padding: 32px;
+  }
+  h1 { font-size: 24px; color: #333; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 14px; margin-bottom: 20px; }
+  .badges { display: flex; gap: 8px; margin-bottom: 20px; }
+  .badge {
+    flex: 1; text-align: center; padding: 6px; border-radius: 8px;
+    font-size: 12px; font-weight: 600; color: #fff; opacity: .35; transition: .3s;
+  }
+  .badge.active { opacity: 1; transform: scale(1.05); }
+  .b1 { background: #4caf50; } .b2 { background: #2196f3; } .b3 { background: #ff9800; }
+  .progress { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+  .progress > div { height: 100%; background: linear-gradient(90deg,#667eea,#764ba2); width: 0; transition: .4s; }
+  .info-row { display: flex; justify-content: space-between; font-size: 14px; color: #666; margin-bottom: 16px; }
+  .score { font-weight: 700; color: #764ba2; }
+  .prompt {
+    background: #f6f4ff; border-left: 4px solid #764ba2; border-radius: 6px;
+    padding: 14px; margin-bottom: 8px; font-size: 17px; color: #333;
+  }
+  .prompt .given { color: #555; font-style: italic; }
+  .prompt .phrasal { color: #764ba2; font-weight: 700; }
+  .prompt .target { background: #ffe9a8; padding: 0 4px; border-radius: 3px; }
+  .hint { font-size: 13px; color: #999; margin-bottom: 16px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    padding: 13px 16px; border: 2px solid #e0dcf0; border-radius: 10px;
+    cursor: pointer; font-size: 16px; color: #333; background: #fff; transition: .2s; text-align: left;
+  }
+  .option:hover:not(:disabled) { border-color: #764ba2; background: #faf8ff; }
+  .option:disabled { cursor: default; }
+  .option.correct { border-color: #4caf50; background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .option.wrong { border-color: #e53935; background: #ffebee; color: #c62828; }
+  .feedback { margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 14px; display: none; line-height: 1.5; }
+  .feedback.show { display: block; }
+  .feedback.ok { background: #e8f5e9; color: #2e7d32; }
+  .feedback.no { background: #ffebee; color: #c62828; }
+  .next-btn {
+    margin-top: 20px; width: 100%; padding: 14px; border: none; border-radius: 10px;
+    background: linear-gradient(90deg,#667eea,#764ba2); color: #fff; font-size: 16px;
+    font-weight: 600; cursor: pointer; display: none;
+  }
+  .next-btn.show { display: block; }
+  .next-btn:hover { opacity: .9; }
+  .result { text-align: center; display: none; }
+  .result.show { display: block; }
+  .emoji { font-size: 56px; }
+  .final-score { font-size: 22px; font-weight: 700; color: #333; margin: 12px 0 4px; }
+  .final-msg { color: #777; margin-bottom: 20px; }
+  .start-btn {
+    padding: 14px 40px; border: none; border-radius: 10px;
+    background: linear-gradient(90deg,#667eea,#764ba2); color: #fff;
+    font-size: 17px; font-weight: 600; cursor: pointer;
+  }
+  .start-btn:hover { opacity: .9; }
+  .quiz-area { display: none; }
+  .quiz-area.show { display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Экран старта -->
+  <div id="startScreen">
+    <h1>🎯 English Question Quiz</h1>
+    <p class="subtitle">Present Simple: general, special & subject questions</p>
+    <div class="badges">
+      <div class="badge b1">General (Yes/No)</div>
+      <div class="badge b2">Special (Wh-)</div>
+      <div class="badge b3">Subject</div>
+    </div>
+    <p style="color:#666;font-size:15px;line-height:1.6;margin-bottom:24px;">
+      15 вопросов, 3 раунда. Практика вопросов в Present Simple с глаголом to be
+      (<i>be keen on, be passionate about, be late for, be on time</i>) и устойчивых
+      выражений (<i>get dressed, prepare breakfast, drive to work...</i>).
+    </p>
+    <div style="text-align:center;"><button class="start-btn" onclick="startQuiz()">Начать игру ▶</button></div>
+  </div>
+
+  <!-- Экран викторины -->
+  <div id="quizArea" class="quiz-area">
+    <h1>🎯 English Question Quiz</h1>
+    <div class="badges">
+      <div class="badge b1" id="bdg1">General (Yes/No)</div>
+      <div class="badge b2" id="bdg2">Special (Wh-)</div>
+      <div class="badge b3" id="bdg3">Subject</div>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="info-row">
+      <span>Вопрос <b id="qNum">1</b> из <span id="qTotal">15</span></span>
+      <span>Очки: <span class="score" id="score">0</span></span>
+    </div>
+    <div class="prompt" id="prompt"></div>
+    <div class="hint" id="hint"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Далее →</button>
+  </div>
+
+  <!-- Экран результата -->
+  <div id="resultScreen" class="result">
+    <div class="emoji" id="emoji">🏆</div>
+    <div class="final-score" id="finalScore"></div>
+    <div class="final-msg" id="finalMsg"></div>
+    <button class="start-btn" onclick="startQuiz()">Играть снова 🔄</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  // ===== РАУНД 1: GENERAL (YES/NO) =====
+  { round: 1,
+    prompt: '<span class="given">She is passionate about music.</span> — Постройте общий вопрос.',
+    hint: 'Глагол to be в Present Simple → инверсия без вспомогательных',
+    options: ['Does she passionate about music?', 'Is she passionate about music?', 'Is she be passionate about music?', 'She is passionate about music?'],
+    correct: 1,
+    explain: 'С to be вопрос строится инверсией: <b>Is she passionate about music?</b> Вспомогательный do/does с to be не используется.'
+  },
+  { round: 1,
+    prompt: '<span class="given">They are keen on football.</span> — Постройте общий вопрос.',
+    hint: 'to be, подлежащее they → are',
+    options: ['Do they keen on football?', 'Are they keen on football?', 'Are they be keen on football?', 'They are keen on football?'],
+    correct: 1,
+    explain: 'С they глагол to be — <b>are</b>, просто меняем местами: <b>Are they keen on football?</b>'
+  },
+  { round: 1,
+    prompt: '<span class="given">He prepares breakfast every morning.</span> — Постройте общий вопрос.',
+    hint: 'Present Simple, he → does + инфинитив',
+    options: ['Do he prepares breakfast every morning?', 'Does he prepare breakfast every morning?', 'Does he prepares breakfast every morning?', 'Prepares he breakfast every morning?'],
+    correct: 1,
+    explain: 'He → вспомогательный <b>does</b>, основной глагол — инфинитив (prepare, не prepares): <b>Does he prepare breakfast every morning?</b>'
+  },
+  { round: 1,
+    prompt: '<span class="given">You set your alarm for 7 a.m.</span> — Постройте общий вопрос.',
+    hint: 'Present Simple, you → do',
+    options: ['Do you set your alarm for 7 a.m.?', 'Does you set your alarm for 7 a.m.?', 'Are you set your alarm for 7 a.m.?', 'You set your alarm for 7 a.m.?'],
+    correct: 0,
+    explain: 'С you используем <b>do</b>: <b>Do you set your alarm for 7 a.m.?</b> Порядок: Do + you + инфинитив set.'
+  },
+  { round: 1,
+    prompt: '<span class="given">She drives to work every day.</span> — Постройте общий вопрос.',
+    hint: 'Present Simple, she → does + инфинитив',
+    options: ['Does she drives to work every day?', 'Do she drive to work every day?', 'Does she drive to work every day?', 'Drives she to work every day?'],
+    correct: 2,
+    explain: 'She → <b>does</b>, а drive возвращается в инфинитив (без -s): <b>Does she drive to work every day?</b>'
+  },
+
+  // ===== РАУНД 2: SPECIAL (WH-) =====
+  { round: 2,
+    prompt: '<span class="given">Kate is late for the meeting because of traffic.</span> — Задайте вопрос к выделенному: <b>because of traffic</b>',
+    hint: 'Вопрос к причине + to be → инверсия',
+    options: ['Why Kate is late for the meeting?', 'Why is Kate late for the meeting?', 'Why does Kate late for the meeting?', 'Why is Kate being late for the meeting?'],
+    correct: 1,
+    explain: 'Причина спрашивается через <b>why</b>, с to be — инверсия: <b>Why is Kate late for the meeting?</b> "Does Kate late" — ошибка: late — прилагательное, нужен to be.'
+  },
+  { round: 2,
+    prompt: '<span class="given">The children get dressed at 8 o\'clock.</span> — Задайте вопрос к выделенному: <b>at 8 o\'clock</b>',
+    hint: 'When + do/does + подлежащее + инфинитив',
+    options: ['When the children get dressed?', 'When does the children get dressed?', 'When do the children get dressed?', 'When are the children get dressed?'],
+    correct: 2,
+    explain: 'The children (мн.ч.) → <b>do</b>: <b>When do the children get dressed?</b> Порядок: When + do + подлежащее + инфинитив.'
+  },
+  { round: 2,
+    prompt: '<span class="given">He leaves the house at around 7.30.</span> — Задайте вопрос к выделенному: <b>at around 7.30</b>',
+    hint: 'What time / When + does + подлежащее + инфинитив',
+    options: ['What time does he leave the house?', 'What time he leaves the house?', 'What time does he leaves the house?', 'What time is he leave the house?'],
+    correct: 0,
+    explain: 'He → <b>does</b>, глагол — инфинитив (leave, не leaves): <b>What time does he leave the house?</b>'
+  },
+  { round: 2,
+    prompt: '<span class="given">My brother is keen on swimming.</span> — Задайте вопрос к выделенному: <b>swimming</b>',
+    hint: 'What ... + to be → инверсия',
+    options: ['What is your brother keen on?', 'What does your brother keen on?', 'What your brother is keen on?', 'What is your brother keen on?'],
+    correct: 0,
+    explain: 'Устойчивое сочетание keen <b>on</b> сохраняет предлог: <b>What is your brother keen on?</b>'
+  },
+  { round: 2,
+    prompt: '<span class="given">I drive to work by car.</span> — Задайте вопрос к выделенному: <b>by car</b>',
+    hint: 'How + do/does + подлежащее + инфинитив',
+    options: ['How you get to work?', 'How does you get to work?', 'How do you get to work?', 'How are you get to work?'],
+    correct: 2,
+    explain: 'I/you → <b>do</b>: <b>How do you get to work?</b> Обратите внимание: выделено "by car", поэтому правильный вопрос — "How..." (каким образом), а не "What...".'
+  },
+
+  // ===== РАУНД 3: SUBJECT =====
+  { round: 3,
+    prompt: '<span class="given">Tom is passionate about chess.</span> — Задайте вопрос к подлежащему: <b>Tom</b>',
+    hint: 'В subject-вопросах вспомогательный глагол НЕ нужен!',
+    options: ['Who does be passionate about chess?', 'Who is passionate about chess?', 'Who does passionate about chess?', 'Whom is passionate about chess?'],
+    correct: 1,
+    explain: 'Who заменяет подлежащее → вопрос строится как утверждение: Who + is: <b>Who is passionate about chess?</b> Именительный падеж who, не whom.'
+  },
+  { round: 3,
+    prompt: '<span class="given">My sister prepares breakfast.</span> — Задайте вопрос к подлежащему: <b>My sister</b>',
+    hint: 'Present Simple — но вспомогательный нужен?',
+    options: ['Who does prepare breakfast?', 'Who prepare breakfast?', 'Who prepares breakfast?', 'Whom prepares breakfast?'],
+    correct: 2,
+    explain: 'Who как подлежащее = 3-е лицо ед.ч., поэтому глагол с -s, но без does: <b>Who prepares breakfast?</b>'
+  },
+  { round: 3,
+    prompt: '<span class="given">Someone is late for class.</span> — Задайте вопрос к подлежащему: <b>Someone</b>',
+    hint: 'Кто опаздывает?',
+    options: ['Who does late for class?', 'Who is late for class?', 'Who late for class?', 'Whom is late for class?'],
+    correct: 1,
+    explain: 'Subject-вопрос с to be: Who + is: <b>Who is late for class?</b> Late — прилагательное, поэтому нужен is.'
+  },
+  { round: 3,
+    prompt: '<span class="given">The bus is on time today.</span> — Задайте вопрос к подлежащему: <b>The bus</b>',
+    hint: 'Что пришло вовремя?',
+    options: ['What does on time today?', 'What is on time today?', 'What on time today?', 'What is be on time today?'],
+    correct: 1,
+    explain: 'What как подлежащее + to be: <b>What is on time today?</b> Вспомогательный не нужен — who/what сами являются подлежащими.'
+  },
+  { round: 3,
+    prompt: '<span class="given">He sets his alarm for 6 a.m.</span> — Задайте вопрос к подлежащему: <b>He</b>',
+    hint: 'Кто ставит будильник на 6?',
+    options: ['Who does set their alarm for 6 a.m.?', 'Who set their alarm for 6 a.m.?', 'Who sets their alarm for 6 a.m.?', 'Whom sets their alarm for 6 a.m.?'],
+    correct: 2,
+    explain: 'Who = 3-е лицо ед.ч. → глагол с -s без вспомогательного: <b>Who sets their alarm for 6 a.m.?</b> Возможен вариант и "Who sets his alarm..." — но "their" нейтрально, когда мы не знаем, кто именно.'
+  }
+];
+
+let current = 0, score = 0, locked = false;
+
+function startQuiz() {
+  current = 0; score = 0;
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('resultScreen').classList.remove('show');
+  document.getElementById('quizArea').classList.add('show');
+  document.getElementById('score').textContent = '0';
+  document.getElementById('qTotal').textContent = questions.length;
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[current];
+  locked = false;
+
+  for (let r = 1; r <= 3; r++) {
+    document.getElementById('bdg' + r).classList.toggle('active', q.round === r);
+  }
+
+  document.getElementById('qNum').textContent = current + 1;
+  document.getElementById('bar').style.width = (current / questions.length * 100) + '%';
+  document.getElementById('prompt').innerHTML = q.prompt;
+  document.getElementById('hint').textContent = '💡 ' + q.hint;
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback'; fb.innerHTML = '';
+  document.getElementById('nextBtn').classList.remove('show');
+
+  const optDiv = document.getElementById('options');
+  optDiv.innerHTML = '';
+  q.options.forEach((text, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = text;
+    btn.onclick = () => choose(i, btn);
+    optDiv.appendChild(btn);
+  });
+}
+
+function choose(index, btn) {
+  if (locked) return;
+  locked = true;
+  const q = questions[current];
+  const buttons = document.querySelectorAll('.option');
+  buttons.forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  if (index === q.correct) {
+    btn.classList.add('correct');
+    score++;
+    document.getElementById('score').textContent = score;
+    fb.className = 'feedback show ok';
+    fb.innerHTML = '✅ <b>Правильно!</b> ' + q.explain;
+  } else {
+    btn.classList.add('wrong');
+    buttons[q.correct].classList.add('correct');
+    fb.className = 'feedback show no';
+    fb.innerHTML = '❌ <b>Неверно.</b> ' + q.explain;
+  }
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function nextQuestion() {
+  current++;
+  if (current < questions.length) {
+    showQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  document.getElementById('quizArea').classList.remove('show');
+  const res = document.getElementById('resultScreen');
+  res.classList.add('show');
+
+  const total = questions.length;
+  const pct = score / total;
+  let emoji, msg;
+  if (pct === 1)      { emoji = '🏆'; msg = 'Идеально! Вы мастер вопросов в Present Simple!'; }
+  else if (pct >= .8) { emoji = '🌟'; msg = 'Отличный результат! Совсем чуть-чуть до идеала.'; }
+  else if (pct >= .6) { emoji = '👍'; msg = 'Хорошо! Повторите правила to be и do/does.'; }
+  else if (pct >= .4) { emoji = '💪'; msg = 'Неплохое начало! Обратите особое внимание на subject-вопросы.'; }
+  else                { emoji = '📚'; msg = 'Стоит потренироваться ещё. Начните с правил do/does и to be!'; }
+
+  document.getElementById('emoji').textContent = emoji;
+  document.getElementById('finalScore').textContent = score + ' из ' + total;
+  document.getElementById('finalMsg').textContent = msg;
+}
+</script>
+</body>
+</html>
